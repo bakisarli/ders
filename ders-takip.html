@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ders Takip">
+<title>Ders Takip Defteri</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; overscroll-behavior: none; }
+  input, select, textarea { font-family: inherit; font-size: 16px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; }
+  .btn { cursor: pointer; border: none; font-size: 13px; font-weight: 600; padding: 10px 18px; border-radius: 8px; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-primary { background: #f0a500; color: #0d1117; }
+  .btn-primary:active { background: #d49000; }
+  .btn-ghost { background: transparent; color: #8b949e; border: 1px solid #30363d; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 7px; }
+  .inp { background: #0d1117; border: 1px solid #30363d; color: #e6edf3; padding: 12px 14px; border-radius: 8px; width: 100%; font-size: 16px; }
+  .inp:focus { outline: none; border-color: #f0a500; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+  .modal { background: #161b22; border: 1px solid #30363d; border-radius: 20px 20px 0 0; padding: 12px 20px 40px; width: 100%; max-height: 88vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .handle { width: 40px; height: 4px; background: #30363d; border-radius: 2px; margin: 0 auto 20px; }
+  .tab-bar { display: flex; border-top: 1px solid #21262d; background: #161b22; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 14px; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #484f58; gap: 3px; }
+  .tab-item.active { color: #f0a500; }
+  .tab-icon { font-size: 22px; line-height: 1; }
+  .ders-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; margin-bottom: 8px; }
+  .ders-card.yapildi { border-left: 3px solid #2ea043; }
+  .ders-card.iptal { border-left: 3px solid #8b1a1a; opacity: 0.65; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+  .badge-yapildi { background: #1a4731; color: #3fb950; }
+  .badge-iptal { background: #3d1a1a; color: #f85149; }
+  .badge-bekliyor { background: #1c2128; color: #8b949e; border: 1px solid #30363d; }
+  .borc-bar { height: 5px; background: #21262d; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .borc-fill { height: 100%; border-radius: 3px; }
+  .scroll-content { padding: 0 0 100px; }
+  .section-hdr { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #484f58; text-transform: uppercase; }
+  .empty { color: #484f58; font-size: 14px; padding: 32px 16px; text-align: center; }
+  .week-btn { background: #21262d; border: none; color: #8b949e; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .gun-pills { display: flex; gap: 7px; padding: 0 16px 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .gun-pills::-webkit-scrollbar { display: none; }
+  .gun-pill { min-width: 46px; height: 62px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; text-transform: uppercase; border: 1px solid #21262d; background: #161b22; color: #484f58; flex-shrink: 0; gap: 1px; }
+  .gun-pill.isbugun { border-color: #f0a500; color: #f0a500; }
+  .pdot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; margin-top: 2px; }
+  .durum-btns { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .d-btn { cursor: pointer; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 7px; border: 1px solid transparent; }
+  .d-btn.on-yapildi { background: #1a4731; color: #3fb950; border-color: #2ea043; }
+  .d-btn.off-yapildi { background: transparent; color: #484f58; border-color: #30363d; }
+  .d-btn.on-iptal { background: #3d1a1a; color: #f85149; border-color: #8b1a1a; }
+  .d-btn.off-iptal { background: transparent; color: #484f58; border-color: #30363d; }
+  .stat3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .stat3-box { background: #0d1117; border-radius: 8px; padding: 8px; text-align: center; }
+  .lbl { font-size: 11px; font-weight: 700; color: #484f58; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  #app { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+const GUNLER = ["Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi","Pazar"];
+const GUN_SHORT = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+
+function loadData() {
+  try { const r = localStorage.getItem("dersTakip_v2"); return r ? JSON.parse(r) : {ogrenciler:[],dersler:[],odemeler:[],program:[]}; }
+  catch { return {ogrenciler:[],dersler:[],odemeler:[],program:[]}; }
+}
+function saveData(d) { try { localStorage.setItem("dersTakip_v2", JSON.stringify(d)); } catch {} }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function fmt(n) { if (!n && n !== 0) return "—"; return Number(n).toLocaleString("tr-TR") + " ₺"; }
+function fmtDate(d) { if (!d) return ""; return new Date(d+"T12:00:00").toLocaleDateString("tr-TR",{day:"2-digit",month:"short"}); }
+function weekStart(offset=0) { const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7); d.setHours(0,0,0,0); return d; }
+function isoDate(d) { return d.toISOString().split("T")[0]; }
+function todayISO() { return isoDate(new Date()); }
+
+function App() {
+  const [data, setData] = useState(loadData);
+  const [tab, setTab] = useState("bugun");
+  const [modal, setModal] = useState(null);
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  useEffect(() => saveData(data), [data]);
+
+  const upd = (fn) => setData(prev => fn(JSON.parse(JSON.stringify(prev))));
+
+  const ogrenciStats = useMemo(() => data.ogrenciler.map(og => {
+    const yapilan = data.dersler.filter(d => d.ogrenciId === og.id && d.durum === "yapildi");
+    const iptal = data.dersler.filter(d => d.ogrenciId === og.id && d.durum === "iptal");
+    const kazanilan = yapilan.reduce((s,d) => s+(d.ucret!=null&&d.ucret!==""?+d.ucret:og.ucret||0), 0);
+    const odenen = data.odemeler.filter(o => o.ogrenciId===og.id).reduce((s,o) => s+(+o.miktar||0), 0);
+    const oncekiBorc = og.oncekiBorc||0;
+    const kalanBorc = oncekiBorc+kazanilan-odenen;
+    return {...og, yapilan:yapilan.length, iptal:iptal.length, kazanilan, odenen, kalanBorc};
+  }), [data]);
+
+  const toplamBorc = ogrenciStats.reduce((s,o) => s+Math.max(0,o.kalanBorc), 0);
+  const ws = weekStart(weekOffset);
+  const haftaGunleri = Array.from({length:7},(_,i) => { const d=new Date(ws); d.setDate(ws.getDate()+i); return isoDate(d); });
+
+  function gunDersleri(tarih) {
+    const gun = new Date(tarih+"T12:00:00").getDay();
+    const gunIdx = gun===0?6:gun-1;
+    const programDersler = data.program.filter(p=>p.gunIdx===gunIdx).map(p => {
+      const existing = data.dersler.find(d=>d.programId===p.id&&d.tarih===tarih);
+      if (existing) return existing;
+      return {id:null,programId:p.id,ogrenciId:p.ogrenciId,tarih,saat:p.saat,konu:p.konu,ucret:p.ucret,durum:"bekliyor",_virtual:true};
+    });
+    const tekSeferlik = data.dersler.filter(d=>d.tarih===tarih&&!d.programId);
+    return [...programDersler,...tekSeferlik].sort((a,b)=>(a.saat||"").localeCompare(b.saat||""));
+  }
+
+  function dersDurumDegistir(ders, yeniDurum) {
+    if (ders._virtual||!ders.id) {
+      const yeni = {...ders, id:uid(), durum:yeniDurum};
+      delete yeni._virtual;
+      upd(d => { d.dersler.push(yeni); return d; });
+    } else {
+      upd(d => { d.dersler=d.dersler.map(x=>x.id===ders.id?{...x,durum:yeniDurum}:x); return d; });
+    }
+  }
+
+  function programKaydet(form) {
+    if (form.id) upd(d=>{d.program=d.program.map(p=>p.id===form.id?form:p);return d;});
+    else upd(d=>{d.program.push({...form,id:uid()});return d;});
+    setModal(null);
+  }
+  function ogrenciKaydet(form) {
+    if (form.id) upd(d=>{d.ogrenciler=d.ogrenciler.map(o=>o.id===form.id?form:o);return d;});
+    else upd(d=>{d.ogrenciler.push({...form,id:uid()});return d;});
+    setModal(null);
+  }
+  function tekDersKaydet(form) { upd(d=>{d.dersler.push({...form,id:uid(),durum:"bekliyor"});return d;}); setModal(null); }
+  function odemeKaydet(form) { upd(d=>{d.odemeler.push({...form,id:uid()});return d;}); setModal(null); }
+  function sil(type, id) {
+    upd(d => {
+      if (type==="program") d.program=d.program.filter(x=>x.id!==id);
+      if (type==="ders") d.dersler=d.dersler.filter(x=>x.id!==id);
+      if (type==="ogrenci") { d.ogrenciler=d.ogrenciler.filter(x=>x.id!==id); d.program=d.program.filter(x=>x.ogrenciId!==id); d.dersler=d.dersler.filter(x=>x.ogrenciId!==id); d.odemeler=d.odemeler.filter(x=>x.ogrenciId!==id); }
+      if (type==="odeme") d.odemeler=d.odemeler.filter(x=>x.id!==id);
+      return d;
+    });
+  }
+
+  const bugununDersleri = gunDersleri(todayISO());
+
+  return (
+    <div id="app">
+      {/* HEADER */}
+      <div style={{padding:"52px 16px 12px",display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+        <div>
+          <div style={{fontSize:11,fontWeight:700,letterSpacing:2,color:"#484f58",textTransform:"uppercase"}}>Özel Ders</div>
+          <div style={{fontSize:24,fontWeight:700}}>Takip Defteri</div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:10,color:"#484f58",fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>Toplam Alacak</div>
+          <div style={{fontSize:22,fontWeight:700,color:toplamBorc>0?"#f0a500":"#3fb950"}}>{fmt(toplamBorc)}</div>
+        </div>
+      </div>
+
+      <div className="scroll-content">
+
+        {/* BUGÜN */}
+        {tab==="bugun" && (
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0 16px 12px"}}>
+              <div style={{fontSize:14,color:"#8b949e"}}>{new Date().toLocaleDateString("tr-TR",{weekday:"long",day:"numeric",month:"long"})}</div>
+              <button className="btn btn-primary btn-sm" onClick={()=>setModal({type:"tekDers",data:{tarih:todayISO()}})}>+ Ders</button>
+            </div>
+            {bugununDersleri.length===0
+              ? <div className="empty">Bugün programda ders yok.<br/><span style={{fontSize:12}}>Program sekmesinden haftalık program ekle.</span></div>
+              : bugununDersleri.map((ders,i) => (
+                <div key={ders.id||i} style={{padding:"0 16px"}}>
+                  <DersKart ders={ders} ogrenciler={data.ogrenciler} onDurum={dersDurumDegistir} onSil={sil}/>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
+        {/* PROGRAM */}
+        {tab==="program" && (
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"0 16px 12px"}}>
+              <button className="week-btn" onClick={()=>setWeekOffset(w=>w-1)}>‹</button>
+              <div style={{flex:1,textAlign:"center",fontSize:14,color:"#8b949e",fontWeight:600}}>
+                {weekOffset===0?"Bu Hafta":weekOffset===1?"Gelecek Hafta":weekOffset===-1?"Geçen Hafta":`${fmtDate(haftaGunleri[0])} – ${fmtDate(haftaGunleri[6])}`}
+              </div>
+              <button className="week-btn" onClick={()=>setWeekOffset(w=>w+1)}>›</button>
+            </div>
+
+            <div className="gun-pills">
+              {haftaGunleri.map((tarih,i) => {
+                const isToday = tarih===todayISO();
+                const hasDers = gunDersleri(tarih).length>0;
+                return (
+                  <div key={tarih} className={`gun-pill${isToday?" isbugun":""}`}>
+                    <div>{GUN_SHORT[i]}</div>
+                    <div style={{fontSize:18,fontWeight:700}}>{new Date(tarih+"T12:00:00").getDate()}</div>
+                    {hasDers && <div className="pdot"/>}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"0 16px 8px"}}>
+              <div className="section-hdr">Sabit Program</div>
+              <button className="btn btn-primary btn-sm" onClick={()=>setModal({type:"program"})}>+ Ekle</button>
+            </div>
+
+            {data.program.length===0 && <div className="empty">Henüz sabit program yok.<br/>Her hafta tekrar eden dersleri buradan ekle.</div>}
+            {GUNLER.map((gun,gunIdx) => {
+              const gp = data.program.filter(p=>p.gunIdx===gunIdx);
+              if (!gp.length) return null;
+              return (
+                <div key={gun} style={{marginBottom:6}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"#484f58",textTransform:"uppercase",padding:"4px 16px"}}>{gun}</div>
+                  {gp.map(p => {
+                    const og = data.ogrenciler.find(o=>o.id===p.ogrenciId);
+                    return (
+                      <div key={p.id} style={{margin:"0 16px 6px"}}>
+                        <div className="ders-card" style={{borderLeft:"3px solid #f0a500"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                            <div>
+                              <span style={{fontWeight:700,fontSize:15}}>{og?.ad||"?"}</span>
+                              {p.saat && <span style={{marginLeft:8,fontSize:12,color:"#8b949e"}}>🕐 {p.saat}</span>}
+                              {p.konu && <div style={{fontSize:12,color:"#8b949e",marginTop:2}}>{p.konu}</div>}
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:8}}>
+                              <span style={{fontSize:13,color:"#f0a500",fontWeight:700}}>{fmt(p.ucret!=null&&p.ucret!==""?p.ucret:og?.ucret)}</span>
+                              <button className="btn btn-sm" style={{background:"#3d1a1a",color:"#f85149",border:"none",padding:"5px 8px"}} onClick={()=>sil("program",p.id)}>✕</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            <div className="section-hdr" style={{padding:"16px 16px 8px"}}>Bu Hafta Detayı</div>
+            {haftaGunleri.map((tarih,i) => {
+              const dersler = gunDersleri(tarih);
+              if (!dersler.length) return null;
+              const isToday = tarih===todayISO();
+              return (
+                <div key={tarih}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,padding:"6px 16px 4px"}}>
+                    <span style={{fontSize:14,fontWeight:700,color:isToday?"#f0a500":"#e6edf3"}}>{GUNLER[i]}</span>
+                    <span style={{fontSize:11,color:"#484f58"}}>{fmtDate(tarih)}</span>
+                    {isToday && <span style={{fontSize:10,background:"#f0a500",color:"#0d1117",borderRadius:4,padding:"1px 6px",fontWeight:700}}>BUGÜN</span>}
+                  </div>
+                  {dersler.map((ders,j) => (
+                    <div key={ders.id||j} style={{padding:"0 16px"}}>
+                      <DersKart ders={ders} ogrenciler={data.ogrenciler} onDurum={dersDurumDegistir} onSil={sil}/>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ÖĞRENCİLER */}
+        {tab==="ogrenciler" && (
+          <div style={{padding:"0 16px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div className="section-hdr">{data.ogrenciler.length} Öğrenci</div>
+              <button className="btn btn-primary btn-sm" onClick={()=>setModal({type:"ogrenci"})}>+ Öğrenci</button>
+            </div>
+            {data.ogrenciler.length===0 && <div className="empty">Henüz öğrenci yok.</div>}
+            {ogrenciStats.map(og => {
+              const toplam = og.kazanilan+(og.oncekiBorc||0);
+              const pct = toplam>0?Math.min(100,(og.odenen/toplam)*100):100;
+              return (
+                <div key={og.id} className="card" style={{marginBottom:10}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
+                    <div>
+                      <div style={{fontSize:17,fontWeight:700}}>{og.ad}</div>
+                      {og.telefon && <div style={{fontSize:12,color:"#484f58",marginTop:2}}>{og.telefon}</div>}
+                      {og.not && <div style={{fontSize:12,color:"#484f58"}}>{og.not}</div>}
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:14,color:"#f0a500",fontWeight:700}}>{fmt(og.ucret)}/ders</div>
+                      {og.oncekiBorc>0 && <div style={{fontSize:11,color:"#8b949e"}}>+{fmt(og.oncekiBorc)} önceki</div>}
+                    </div>
+                  </div>
+                  <div className="stat3">
+                    <div className="stat3-box"><div style={{fontSize:10,fontWeight:700,color:"#484f58",textTransform:"uppercase",marginBottom:3}}>Yapılan</div><div style={{fontSize:18,fontWeight:700,color:"#3fb950"}}>{og.yapilan}</div></div>
+                    <div className="stat3-box"><div style={{fontSize:10,fontWeight:700,color:"#484f58",textTransform:"uppercase",marginBottom:3}}>İptal</div><div style={{fontSize:18,fontWeight:700,color:"#f85149"}}>{og.iptal}</div></div>
+                    <div className="stat3-box"><div style={{fontSize:10,fontWeight:700,color:"#484f58",textTransform:"uppercase",marginBottom:3}}>Kazanılan</div><div style={{fontSize:13,fontWeight:700,color:"#f0a500"}}>{fmt(og.kazanilan)}</div></div>
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#8b949e",marginBottom:4}}>
+                    <span>Ödenen: {fmt(og.odenen)}</span>
+                    <span style={{color:og.kalanBorc>0?"#f0a500":"#3fb950",fontWeight:700}}>{og.kalanBorc>0?`${fmt(og.kalanBorc)} borç`:"✓ Ödendi"}</span>
+                  </div>
+                  <div className="borc-bar"><div className="borc-fill" style={{width:`${pct}%`,background:og.kalanBorc>0?"#f0a500":"#3fb950"}}/></div>
+                  <div style={{display:"flex",gap:8,marginTop:12}}>
+                    <button className="btn btn-ghost btn-sm" style={{flex:1}} onClick={()=>setModal({type:"ogrenci",data:og})}>Düzenle</button>
+                    <button className="btn btn-primary btn-sm" style={{flex:1}} onClick={()=>setModal({type:"odeme",data:{ogrenciId:og.id}})}>+ Ödeme</button>
+                    <button className="btn btn-sm" style={{background:"#3d1a1a",color:"#f85149",border:"1px solid #5d2a2a"}} onClick={()=>{if(confirm(`${og.ad} silinsin mi?`))sil("ogrenci",og.id);}}>Sil</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ÖDEMELER */}
+        {tab==="odemeler" && (
+          <div style={{padding:"0 16px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div className="section-hdr">Ödemeler</div>
+              <button className="btn btn-primary btn-sm" onClick={()=>setModal({type:"odeme"})}>+ Ödeme</button>
+            </div>
+            {data.odemeler.length===0 && <div className="empty">Henüz ödeme kaydı yok.</div>}
+            {[...data.odemeler].sort((a,b)=>new Date(b.tarih)-new Date(a.tarih)).map(od => {
+              const og = data.ogrenciler.find(o=>o.id===od.ogrenciId);
+              return (
+                <div key={od.id} className="card" style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+                  <div style={{width:38,height:38,borderRadius:"50%",background:"#1a4731",border:"2px solid #2ea043",display:"flex",alignItems:"center",justifyContent:"center",color:"#3fb950",fontSize:17,flexShrink:0}}>₺</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700,fontSize:15}}>{og?.ad||"?"}</div>
+                    {od.not && <div style={{fontSize:12,color:"#8b949e"}}>{od.not}</div>}
+                    <div style={{fontSize:11,color:"#484f58"}}>{fmtDate(od.tarih)}</div>
+                  </div>
+                  <div style={{fontWeight:700,fontSize:17,color:"#3fb950"}}>{fmt(od.miktar)}</div>
+                  <button className="btn btn-sm" style={{background:"#3d1a1a",color:"#f85149",border:"none",padding:"7px 10px"}} onClick={()=>sil("odeme",od.id)}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* TAB BAR */}
+      <div className="tab-bar">
+        {[{key:"bugun",icon:"📅",label:"Bugün"},{key:"program",icon:"🗓",label:"Program"},{key:"ogrenciler",icon:"👤",label:"Öğrenci"},{key:"odemeler",icon:"💰",label:"Ödeme"}].map(t=>(
+          <div key={t.key} className={`tab-item${tab===t.key?" active":""}`} onClick={()=>setTab(t.key)}>
+            <div className="tab-icon">{t.icon}</div>
+            <div>{t.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* MODALLER */}
+      {modal && (
+        <div className="overlay" onClick={e=>e.target===e.currentTarget&&setModal(null)}>
+          <div className="modal">
+            <div className="handle"/>
+            {modal.type==="ogrenci" && <OgrenciModal data={modal.data} onKaydet={ogrenciKaydet} onKapat={()=>setModal(null)}/>}
+            {modal.type==="program" && <ProgramModal ogrenciler={data.ogrenciler} data={modal.data} onKaydet={programKaydet} onKapat={()=>setModal(null)}/>}
+            {modal.type==="tekDers" && <TekDersModal ogrenciler={data.ogrenciler} data={modal.data} onKaydet={tekDersKaydet} onKapat={()=>setModal(null)}/>}
+            {modal.type==="odeme" && <OdemeModal ogrenciler={data.ogrenciler} data={modal.data} onKaydet={odemeKaydet} onKapat={()=>setModal(null)}/>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DersKart({ders, ogrenciler, onDurum, onSil}) {
+  const og = ogrenciler.find(o=>o.id===ders.ogrenciId);
+  const durum = ders.durum||"bekliyor";
+  return (
+    <div className={`ders-card ${durum}`} style={{marginBottom:8}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+        <div>
+          <span style={{fontWeight:700,fontSize:15}}>{og?.ad||"?"}</span>
+          {ders.saat && <span style={{marginLeft:8,fontSize:12,color:"#8b949e"}}>🕐 {ders.saat}</span>}
+          {ders.konu && <div style={{fontSize:13,color:"#8b949e",marginTop:2}}>{ders.konu}</div>}
+        </div>
+        <span className={`badge badge-${durum}`}>{durum==="yapildi"?"✓ Yapıldı":durum==="iptal"?"✕ İptal":"Bekliyor"}</span>
+      </div>
+      <div className="durum-btns">
+        <button className={`d-btn ${durum==="yapildi"?"on-yapildi":"off-yapildi"}`} onClick={()=>onDurum(ders,durum==="yapildi"?"bekliyor":"yapildi")}>✓ Yapıldı</button>
+        <button className={`d-btn ${durum==="iptal"?"on-iptal":"off-iptal"}`} onClick={()=>onDurum(ders,durum==="iptal"?"bekliyor":"iptal")}>✕ İptal</button>
+        {!ders._virtual&&ders.id&&<button className="d-btn off-iptal" style={{marginLeft:"auto",fontSize:11,color:"#484f58",borderColor:"transparent"}} onClick={()=>onSil("ders",ders.id)}>sil</button>}
+      </div>
+    </div>
+  );
+}
+
+function Lbl({t, children}) {
+  return <div><div className="lbl">{t}</div>{children}</div>;
+}
+function Btns({onKapat, onKaydet}) {
+  return (
+    <div style={{display:"flex",gap:10,marginTop:24}}>
+      <button className="btn btn-ghost" style={{flex:1}} onClick={onKapat}>İptal</button>
+      <button className="btn btn-primary" style={{flex:1}} onClick={onKaydet}>Kaydet</button>
+    </div>
+  );
+}
+
+function OgrenciModal({data, onKaydet, onKapat}) {
+  const [f,setF] = useState({ad:"",telefon:"",ucret:"",oncekiBorc:"",not:"",...(data||{})});
+  return (
+    <div>
+      <div style={{fontSize:17,fontWeight:700,marginBottom:20}}>{f.id?"Öğrenci Düzenle":"Yeni Öğrenci"}</div>
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Lbl t="Ad Soyad *"><input className="inp" value={f.ad} onChange={e=>setF({...f,ad:e.target.value})} placeholder="Ahmet Yılmaz"/></Lbl>
+        <Lbl t="Telefon"><input className="inp" value={f.telefon} onChange={e=>setF({...f,telefon:e.target.value})} placeholder="0555 555 55 55"/></Lbl>
+        <Lbl t="Ders Ücreti (₺)"><input className="inp" type="number" value={f.ucret} onChange={e=>setF({...f,ucret:+e.target.value})} placeholder="300"/></Lbl>
+        <Lbl t="Önceki Borç (₺) — daha önce biriken"><input className="inp" type="number" value={f.oncekiBorc} onChange={e=>setF({...f,oncekiBorc:+e.target.value})} placeholder="0"/></Lbl>
+        <Lbl t="Not (okul, sınıf...)"><textarea className="inp" value={f.not} onChange={e=>setF({...f,not:e.target.value})} rows={2} placeholder="9. sınıf, Anadolu Lisesi..."/></Lbl>
+      </div>
+      <Btns onKapat={onKapat} onKaydet={()=>f.ad&&onKaydet(f)}/>
+    </div>
+  );
+}
+
+function ProgramModal({ogrenciler, data, onKaydet, onKapat}) {
+  const [f,setF] = useState({ogrenciId:"",gunIdx:0,saat:"",konu:"",ucret:"",...(data||{})});
+  return (
+    <div>
+      <div style={{fontSize:17,fontWeight:700,marginBottom:20}}>Sabit Ders Ekle</div>
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Lbl t="Öğrenci *"><select className="inp" value={f.ogrenciId} onChange={e=>setF({...f,ogrenciId:e.target.value})}><option value="">Seç...</option>{ogrenciler.map(o=><option key={o.id} value={o.id}>{o.ad}</option>)}</select></Lbl>
+        <Lbl t="Gün *"><select className="inp" value={f.gunIdx} onChange={e=>setF({...f,gunIdx:+e.target.value})}>{GUNLER.map((g,i)=><option key={i} value={i}>{g}</option>)}</select></Lbl>
+        <Lbl t="Saat"><input className="inp" type="time" value={f.saat} onChange={e=>setF({...f,saat:e.target.value})}/></Lbl>
+        <Lbl t="Konu (opsiyonel)"><input className="inp" value={f.konu} onChange={e=>setF({...f,konu:e.target.value})} placeholder="Matematik, İngilizce..."/></Lbl>
+        <Lbl t="Özel ücret (₺, boş = öğrenci ücreti)"><input className="inp" type="number" value={f.ucret} onChange={e=>setF({...f,ucret:e.target.value})} placeholder="Varsayılan"/></Lbl>
+      </div>
+      <Btns onKapat={onKapat} onKaydet={()=>f.ogrenciId&&onKaydet(f)}/>
+    </div>
+  );
+}
+
+function TekDersModal({ogrenciler, data, onKaydet, onKapat}) {
+  const [f,setF] = useState({ogrenciId:"",tarih:todayISO(),saat:"",konu:"",ucret:"",...(data||{})});
+  return (
+    <div>
+      <div style={{fontSize:17,fontWeight:700,marginBottom:20}}>Tek Seferlik Ders</div>
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Lbl t="Öğrenci *"><select className="inp" value={f.ogrenciId} onChange={e=>setF({...f,ogrenciId:e.target.value})}><option value="">Seç...</option>{ogrenciler.map(o=><option key={o.id} value={o.id}>{o.ad}</option>)}</select></Lbl>
+        <Lbl t="Tarih *"><input className="inp" type="date" value={f.tarih} onChange={e=>setF({...f,tarih:e.target.value})}/></Lbl>
+        <Lbl t="Saat"><input className="inp" type="time" value={f.saat} onChange={e=>setF({...f,saat:e.target.value})}/></Lbl>
+        <Lbl t="Konu"><input className="inp" value={f.konu} onChange={e=>setF({...f,konu:e.target.value})} placeholder="Türev, paragraf..."/></Lbl>
+        <Lbl t="Ücret (₺)"><input className="inp" type="number" value={f.ucret} onChange={e=>setF({...f,ucret:e.target.value})} placeholder="Varsayılan"/></Lbl>
+      </div>
+      <Btns onKapat={onKapat} onKaydet={()=>f.ogrenciId&&f.tarih&&onKaydet(f)}/>
+    </div>
+  );
+}
+
+function OdemeModal({ogrenciler, data, onKaydet, onKapat}) {
+  const [f,setF] = useState({ogrenciId:"",miktar:"",tarih:todayISO(),not:"",...(data||{})});
+  return (
+    <div>
+      <div style={{fontSize:17,fontWeight:700,marginBottom:20}}>Ödeme Kaydet</div>
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <Lbl t="Öğrenci *"><select className="inp" value={f.ogrenciId} onChange={e=>setF({...f,ogrenciId:e.target.value})}><option value="">Seç...</option>{ogrenciler.map(o=><option key={o.id} value={o.id}>{o.ad}</option>)}</select></Lbl>
+        <Lbl t="Miktar (₺) *"><input className="inp" type="number" value={f.miktar} onChange={e=>setF({...f,miktar:+e.target.value})} placeholder="500"/></Lbl>
+        <Lbl t="Tarih"><input className="inp" type="date" value={f.tarih} onChange={e=>setF({...f,tarih:e.target.value})}/></Lbl>
+        <Lbl t="Not"><input className="inp" value={f.not} onChange={e=>setF({...f,not:e.target.value})} placeholder="Nakit, EFT..."/></Lbl>
+      </div>
+      <Btns onKapat={onKapat} onKaydet={()=>f.ogrenciId&&f.miktar&&onKaydet(f)}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<App/>);
+</script>
+</body>
+</html>
